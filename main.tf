@@ -94,4 +94,10 @@ resource "azurerm_container_app_job" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
+
+  timeouts {
+    create = var.timeouts.create
+    update = var.timeouts.update
+    delete = var.timeouts.delete
+  }
 }
