@@ -104,11 +104,9 @@ module "schedule_trigger" {
   }
   trigger_config = {
     schedule_trigger_config = {
-      cron_expression = "0 * * * *"
-      time_zone       = "UTC"
-      start_time      = "2025-05-01T00:00:00Z"
-      end_time        = "2026-06-01T00:00:00Z"
-      expiration_time = "2026-06-01T00:00:00Z"
+      cron_expression          = "0 * * * *"
+      parallelism              = 1
+      replica_completion_count = 1
     }
   }
 }
