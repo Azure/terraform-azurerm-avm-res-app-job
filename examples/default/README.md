@@ -5,19 +5,15 @@ This deploys the module in its simplest form.
 
 ```hcl
 terraform {
-  required_version = "~> 1.5"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.74"
-    }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.5"
+      version = ">= 3.0.0"
     }
   }
 }
@@ -53,19 +49,74 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
+resource "azurerm_container_app_environment" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = "my-environment"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 # This is the module call
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
 # with a data source.
-module "test" {
-  source = "../../"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  # ...
-  location            = azurerm_resource_group.this.location
-  name                = "TODO" # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
-  resource_group_name = azurerm_resource_group.this.name
 
-  enable_telemetry = var.enable_telemetry # see variables.tf
+# This module creates a container app with a manual trigger.
+module "manual_trigger" {
+  source = "../../"
+
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-mt"
+  resource_group_name                   = azurerm_resource_group.this.name
+  template = {
+    container = {
+      name    = "my-container"
+      image   = "docker.io/ubuntu"
+      command = ["echo"]
+      args    = ["Hello, World!"]
+      cpu     = 0.5
+      memory  = "1Gi"
+    }
+  }
+  enable_telemetry = var.enable_telemetry
+  trigger_config = {
+    manual_trigger_config = {
+      parallelism              = 1
+      replica_completion_count = 1
+    }
+  }
+}
+
+# This module creates a container app with a schedule_trigger.
+module "schedule_trigger" {
+  source = "../../"
+
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-st"
+  resource_group_name                   = azurerm_resource_group.this.name
+  template = {
+    container = {
+      name    = "my-container"
+      image   = "docker.io/ubuntu"
+      command = ["echo"]
+      args    = ["Hello, World!"]
+      cpu     = 0.5
+      memory  = "1Gi"
+    }
+  }
+  managed_identities = {
+    system_assigned = true
+  }
+  trigger_config = {
+    schedule_trigger_config = {
+      cron_expression = "0 * * * *"
+      time_zone       = "UTC"
+      start_time      = "2025-05-01T00:00:00Z"
+      end_time        = "2026-06-01T00:00:00Z"
+      expiration_time = "2026-06-01T00:00:00Z"
+    }
+  }
 }
 ```
 
@@ -74,18 +125,17 @@ module "test" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.74)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
-
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5)
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
 ## Resources
 
 The following resources are used by this module:
 
+- [azurerm_container_app_environment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_environment) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
@@ -116,6 +166,12 @@ No outputs.
 
 The following Modules are called:
 
+### <a name="module_manual_trigger"></a> [manual\_trigger](#module\_manual\_trigger)
+
+Source: ../../
+
+Version:
+
 ### <a name="module_naming"></a> [naming](#module\_naming)
 
 Source: Azure/naming/azurerm
@@ -128,7 +184,7 @@ Source: Azure/avm-utl-regions/azurerm
 
 Version: ~> 0.1
 
-### <a name="module_test"></a> [test](#module\_test)
+### <a name="module_schedule_trigger"></a> [schedule\_trigger](#module\_schedule\_trigger)
 
 Source: ../../
 

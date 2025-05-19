@@ -57,12 +57,11 @@ resource "azurerm_container_app_environment" "this" {
 # This module creates a container app with a manual trigger.
 module "manual_trigger" {
   source = "../../"
-  # source             = "Azure/avm-res-app-job/azurerm"
 
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-mt"
   resource_group_name                   = azurerm_resource_group.this.name
-  container_app_environment_resource_id = azurerm_container_app_environment.this.id
   template = {
     container = {
       name    = "my-container"
@@ -73,24 +72,23 @@ module "manual_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   trigger_config = {
     manual_trigger_config = {
       parallelism              = 1
       replica_completion_count = 1
     }
   }
-  enable_telemetry = var.enable_telemetry
 }
 
 # This module creates a container app with a schedule_trigger.
 module "schedule_trigger" {
   source = "../../"
-  # source             = "Azure/avm-res-app-job/azurerm"
 
-  name                                  = "${module.naming.container_app.name_unique}-job-st"
-  location                              = azurerm_resource_group.this.location
-  resource_group_name                   = azurerm_resource_group.this.name
   container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-st"
+  resource_group_name                   = azurerm_resource_group.this.name
   template = {
     container = {
       name    = "my-container"
@@ -100,6 +98,9 @@ module "schedule_trigger" {
       cpu     = 0.5
       memory  = "1Gi"
     }
+  }
+  managed_identities = {
+    system_assigned = true
   }
   trigger_config = {
     schedule_trigger_config = {
@@ -109,8 +110,5 @@ module "schedule_trigger" {
       end_time        = "2026-06-01T00:00:00Z"
       expiration_time = "2026-06-01T00:00:00Z"
     }
-  }
-  managed_identities = {
-    system_assigned = true
   }
 }

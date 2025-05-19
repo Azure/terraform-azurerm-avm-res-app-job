@@ -1,12 +1,12 @@
-variable "location" {
-  type        = string
-  description = "The Azure region where this and supporting resources should be deployed."
-  nullable    = false
-}
-
 variable "container_app_environment_resource_id" {
   type        = string
   description = "The ID of the Container App Environment to host this Container App."
+  nullable    = false
+}
+
+variable "location" {
+  type        = string
+  description = "The Azure region where this and supporting resources should be deployed."
   nullable    = false
 }
 
@@ -20,12 +20,6 @@ variable "resource_group_name" {
   type        = string
   description = "(Required) The name of the resource group in which the Container App Environment is to be created. Changing this forces a new resource to be created."
   nullable    = false
-}
-
-variable "replica_timeout_in_seconds" {
-  type        = number
-  description = "The timeout in seconds for the job to complete."
-  default     = 300
 }
 
 variable "template" {
@@ -112,6 +106,43 @@ variable "template" {
   })
 }
 
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
+
+variable "managed_identities" {
+  type = object({
+    system_assigned            = optional(bool, false)
+    user_assigned_resource_ids = optional(set(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+  Controls the Managed Identity configuration on this resource. The following properties can be specified:
+
+  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  DESCRIPTION
+  nullable    = false
+}
+
+variable "replica_timeout_in_seconds" {
+  type        = number
+  default     = 300
+  description = "The timeout in seconds for the job to complete."
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) A mapping of tags to assign to the Container App Job."
+}
+
 variable "trigger_config" {
   type = object({
     manual_trigger_config = optional(object({
@@ -149,6 +180,7 @@ variable "trigger_config" {
     }
   }
   description = "Configuration for the trigger. Only one of manual_trigger_config, event_trigger_config, or schedule_trigger_config can be specified."
+
   validation {
     condition = (
       (var.trigger_config.manual_trigger_config != null ? 1 : 0) +
@@ -157,35 +189,4 @@ variable "trigger_config" {
     ) == 1
     error_message = "Only one of manual_trigger_config, event_trigger_config, or schedule_trigger_config can be specified."
   }
-}
-
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "(Optional) A mapping of tags to assign to the Container App Job."
-}
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
-variable "managed_identities" {
-  type = object({
-    system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
-  })
-  default     = {}
-  description = <<DESCRIPTION
-  Controls the Managed Identity configuration on this resource. The following properties can be specified:
-
-  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
-  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
-  DESCRIPTION
-  nullable    = false
 }
