@@ -1,29 +1,101 @@
-# TODO: Replace this dummy resource azurerm_resource_group.TODO with your module resource
-resource "azurerm_resource_group" "TODO" {
-  location = var.location
-  name     = var.name # calling code must supply the name
-  tags     = var.tags
-}
+resource "azurerm_container_app_job" "this" {
+  container_app_environment_id = var.container_app_environment_resource_id
+  location                     = var.location
+  name                         = var.name
+  replica_timeout_in_seconds   = var.replica_timeout_in_seconds
+  resource_group_name          = var.resource_group_name
+  tags                         = var.tags
 
-# required AVM resources interfaces
-resource "azurerm_management_lock" "this" {
-  count = var.lock != null ? 1 : 0
+  dynamic "template" {
+    for_each = [var.template]
 
-  lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
-  scope      = azurerm_resource_group.TODO.id # TODO: Replace with your azurerm resource name
-  notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
-}
+    content {
+      dynamic "container" {
+        for_each = [template.value.container]
 
-resource "azurerm_role_assignment" "this" {
-  for_each = var.role_assignments
+        content {
+          cpu     = container.value.cpu
+          image   = container.value.image
+          memory  = container.value.memory
+          name    = container.value.name
+          args    = container.value.args
+          command = container.value.command
 
-  principal_id                           = each.value.principal_id
-  scope                                  = azurerm_resource_group.TODO.id # TODO: Replace this dummy resource azurerm_resource_group.TODO with your module resource
-  condition                              = each.value.condition
-  condition_version                      = each.value.condition_version
-  delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
+          dynamic "env" {
+            for_each = container.value.env == null ? [] : container.value.env
+
+            content {
+              name        = env.value.name
+              secret_name = env.value.secret_name
+              value       = env.value.value
+            }
+          }
+        }
+      }
+      dynamic "init_container" {
+        for_each = template.value.init_container == null ? [] : template.value.init_container
+
+        content {
+          image   = init_container.value.image
+          name    = init_container.value.name
+          args    = init_container.value.args
+          command = init_container.value.command
+          cpu     = init_container.value.cpu
+          memory  = init_container.value.memory
+
+          dynamic "env" {
+            for_each = init_container.value.env == null ? [] : init_container.value.env
+
+            content {
+              name        = env.value.name
+              secret_name = env.value.secret_name
+              value       = env.value.value
+            }
+          }
+        }
+      }
+      dynamic "volume" {
+        for_each = template.value.volume == null ? [] : template.value.volume
+
+        content {
+          name         = volume.value.name
+          storage_name = volume.value.storage_name
+          storage_type = volume.value.storage_type
+        }
+      }
+    }
+  }
+  dynamic "event_trigger_config" {
+    for_each = var.trigger_config.event_trigger_config == null ? [] : [var.trigger_config.event_trigger_config]
+
+    content {
+      parallelism              = event_trigger_config.value.parallelism
+      replica_completion_count = event_trigger_config.value.replica_completion_count
+    }
+  }
+  dynamic "identity" {
+    for_each = local.managed_identities.system_assigned_user_assigned
+
+    content {
+      type         = identity.value.type
+      identity_ids = identity.value.user_assigned_resource_ids
+    }
+  }
+  dynamic "manual_trigger_config" {
+    for_each = var.trigger_config.manual_trigger_config == null ? [] : [var.trigger_config.manual_trigger_config]
+
+    content {
+      parallelism              = manual_trigger_config.value.parallelism
+      replica_completion_count = manual_trigger_config.value.replica_completion_count
+    }
+  }
+  dynamic "schedule_trigger_config" {
+    for_each = var.trigger_config.schedule_trigger_config == null ? [] : [var.trigger_config.schedule_trigger_config]
+
+    content {
+      cron_expression          = schedule_trigger_config.value.cron_expression
+      parallelism              = schedule_trigger_config.value.parallelism
+      replica_completion_count = schedule_trigger_config.value.replica_completion_count
+    }
+  }
 }

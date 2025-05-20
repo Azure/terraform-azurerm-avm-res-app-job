@@ -29,12 +29,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
-- [azurerm_private_endpoint.this_managed_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint.this_unmanaged_dns_zone_groups](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
-- [azurerm_private_endpoint_application_security_group_association.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint_application_security_group_association) (resource)
-- [azurerm_resource_group.TODO](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
-- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
+- [azurerm_container_app_job.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/container_app_job) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
 - [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
@@ -45,85 +40,127 @@ The following resources are used by this module:
 
 The following input variables are required:
 
+### <a name="input_container_app_environment_resource_id"></a> [container\_app\_environment\_resource\_id](#input\_container\_app\_environment\_resource\_id)
+
+Description: The ID of the Container App Environment to host this Container App.
+
+Type: `string`
+
 ### <a name="input_location"></a> [location](#input\_location)
 
-Description: Azure region where the resource should be deployed.
+Description: The Azure region where this and supporting resources should be deployed.
 
 Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
 
-Description: The name of the this resource.
+Description: The name for this Container App.
 
 Type: `string`
 
 ### <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name)
 
-Description: The resource group where the resources will be deployed.
+Description: (Required) The name of the resource group in which the Container App Environment is to be created. Changing this forces a new resource to be created.
 
 Type: `string`
 
-## Optional Inputs
+### <a name="input_template"></a> [template](#input\_template)
 
-The following input variables are optional (have default values):
-
-### <a name="input_customer_managed_key"></a> [customer\_managed\_key](#input\_customer\_managed\_key)
-
-Description: A map describing customer-managed keys to associate with the resource. This includes the following properties:
-- `key_vault_resource_id` - The resource ID of the Key Vault where the key is stored.
-- `key_name` - The name of the key.
-- `key_version` - (Optional) The version of the key. If not specified, the latest version is used.
-- `user_assigned_identity` - (Optional) An object representing a user-assigned identity with the following properties:
-  - `resource_id` - The resource ID of the user-assigned identity.
+Description: The template block describes the configuration for the Container App Job.  
+It defines the main container, optional init containers, resource requirements,  
+environment variables, probes (liveness, readiness, startup), and volume mounts.  
+Use this variable to specify the container image, CPU/memory, commands, arguments,  
+environment variables, and any additional configuration needed for the job's execution environment.
 
 Type:
 
 ```hcl
 object({
-    key_vault_resource_id = string
-    key_name              = string
-    key_version           = optional(string, null)
-    user_assigned_identity = optional(object({
-      resource_id = string
-    }), null)
+    max_replicas = optional(number)
+    min_replicas = optional(number)
+    container = object({
+      name    = string
+      image   = string
+      cpu     = number
+      memory  = string
+      command = optional(list(string))
+      args    = optional(list(string))
+      env = optional(list(object({
+        name        = string
+        secret_name = optional(string)
+        value       = optional(string)
+      })))
+      liveness_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        period                  = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host             = optional(string)
+        initial_delay    = optional(number)
+        interval_seconds = optional(number)
+        path             = optional(string)
+        timeout          = optional(number)
+      })))
+      readiness_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host                    = optional(string)
+        interval_seconds        = optional(number)
+        path                    = optional(string)
+        success_count_threshold = optional(number)
+        timeout                 = optional(number)
+      })))
+      startup_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host             = optional(string)
+        interval_seconds = optional(number)
+        path             = optional(string)
+        timeout          = optional(number)
+      })))
+      volume_mounts = optional(list(object({
+        name = string
+        path = string
+      })))
+    })
+    init_container = optional(list(object({
+      name    = string
+      image   = string
+      cpu     = number
+      memory  = string
+      command = list(string)
+      args    = list(string)
+      env = optional(list(object({
+        name        = string
+        secret_name = optional(string)
+        value       = optional(string)
+      })))
+    })))
+    volume = optional(list(object({
+      name         = optional(string)
+      storage_type = optional(string)
+      storage_name = optional(string)
+    })))
   })
 ```
 
-Default: `null`
+## Optional Inputs
 
-### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
-
-Description: A map of diagnostic settings to create on the Key Vault. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
-- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
-- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
-- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
-- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
-- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
-- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
-- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
-- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
-- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
-
-Type:
-
-```hcl
-map(object({
-    name                                     = optional(string, null)
-    log_categories                           = optional(set(string), [])
-    log_groups                               = optional(set(string), ["allLogs"])
-    metric_categories                        = optional(set(string), ["AllMetrics"])
-    log_analytics_destination_type           = optional(string, "Dedicated")
-    workspace_resource_id                    = optional(string, null)
-    storage_account_resource_id              = optional(string, null)
-    event_hub_authorization_rule_resource_id = optional(string, null)
-    event_hub_name                           = optional(string, null)
-    marketplace_partner_resource_id          = optional(string, null)
-  }))
-```
-
-Default: `{}`
+The following input variables are optional (have default values):
 
 ### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
 
@@ -135,30 +172,12 @@ Type: `bool`
 
 Default: `true`
 
-### <a name="input_lock"></a> [lock](#input\_lock)
-
-Description: Controls the Resource Lock configuration for this resource. The following properties can be specified:
-
-- `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
-- `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
-
-Type:
-
-```hcl
-object({
-    kind = string
-    name = optional(string, null)
-  })
-```
-
-Default: `null`
-
 ### <a name="input_managed_identities"></a> [managed\_identities](#input\_managed\_identities)
 
-Description: Controls the Managed Identity configuration on this resource. The following properties can be specified:
+Description:   Controls the Managed Identity configuration on this resource. The following properties can be specified:
 
-- `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
-- `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
 
 Type:
 
@@ -171,114 +190,82 @@ object({
 
 Default: `{}`
 
-### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
+### <a name="input_replica_timeout_in_seconds"></a> [replica\_timeout\_in\_seconds](#input\_replica\_timeout\_in\_seconds)
 
-Description: A map of private endpoints to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: The timeout in seconds for the job to complete.
 
-- `name` - (Optional) The name of the private endpoint. One will be generated if not set.
-- `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
-- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-- `tags` - (Optional) A mapping of tags to assign to the private endpoint.
-- `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
-- `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
-- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of this resource.
-- `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  - `name` - The name of the IP configuration.
-  - `private_ip_address` - The private IP address of the IP configuration.
+Type: `number`
 
-Type:
-
-```hcl
-map(object({
-    name = optional(string, null)
-    role_assignments = optional(map(object({
-      role_definition_id_or_name             = string
-      principal_id                           = string
-      description                            = optional(string, null)
-      skip_service_principal_aad_check       = optional(bool, false)
-      condition                              = optional(string, null)
-      condition_version                      = optional(string, null)
-      delegated_managed_identity_resource_id = optional(string, null)
-    })), {})
-    lock = optional(object({
-      kind = string
-      name = optional(string, null)
-    }), null)
-    tags                                    = optional(map(string), null)
-    subnet_resource_id                      = string
-    private_dns_zone_group_name             = optional(string, "default")
-    private_dns_zone_resource_ids           = optional(set(string), [])
-    application_security_group_associations = optional(map(string), {})
-    private_service_connection_name         = optional(string, null)
-    network_interface_name                  = optional(string, null)
-    location                                = optional(string, null)
-    resource_group_name                     = optional(string, null)
-    ip_configurations = optional(map(object({
-      name               = string
-      private_ip_address = string
-    })), {})
-  }))
-```
-
-Default: `{}`
-
-### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
-
-Description: Whether to manage private DNS zone groups with this module. If set to false, you must manage private DNS zone groups externally, e.g. using Azure Policy.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
-
-Description: A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-
-- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
-- `principal_id` - The ID of the principal to assign the role to.
-- `description` - The description of the role assignment.
-- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
-- `condition` - The condition which will be used to scope the role assignment.
-- `condition_version` - The version of the condition syntax. Valid values are '2.0'.
-
-> Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
-
-Type:
-
-```hcl
-map(object({
-    role_definition_id_or_name             = string
-    principal_id                           = string
-    description                            = optional(string, null)
-    skip_service_principal_aad_check       = optional(bool, false)
-    condition                              = optional(string, null)
-    condition_version                      = optional(string, null)
-    delegated_managed_identity_resource_id = optional(string, null)
-  }))
-```
-
-Default: `{}`
+Default: `300`
 
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
-Description: (Optional) Tags of the resource.
+Description: (Optional) A mapping of tags to assign to the Container App Job.
 
 Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_trigger_config"></a> [trigger\_config](#input\_trigger\_config)
+
+Description: Configuration for the trigger. Only one of manual\_trigger\_config, event\_trigger\_config, or schedule\_trigger\_config can be specified.
+
+Type:
+
+```hcl
+object({
+    manual_trigger_config = optional(object({
+      parallelism              = optional(number)
+      replica_completion_count = optional(number)
+    }))
+    event_trigger_config = optional(object({
+      parallelism              = optional(number)
+      replica_completion_count = optional(number)
+      scale = optional(object({
+        max_executions              = optional(number)
+        min_executions              = optional(number)
+        polling_interval_in_seconds = optional(number)
+        rules = optional(object({
+          name             = optional(string)
+          custom_rule_type = optional(string)
+          metadata         = optional(map(string))
+          authentication = optional(object({
+            secret_name       = optional(string)
+            trigger_parameter = optional(string)
+          }))
+        }))
+      }))
+    }))
+    schedule_trigger_config = optional(object({
+      cron_expression          = optional(string)
+      parallelism              = optional(number)
+      replica_completion_count = optional(number)
+    }))
+  })
+```
+
+Default:
+
+```json
+{
+  "manual_trigger_config": {
+    "parallelism": 1,
+    "replica_completion_count": 1
+  }
+}
+```
+
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_private_endpoints"></a> [private\_endpoints](#output\_private\_endpoints)
+### <a name="output_container_app_job_name"></a> [container\_app\_job\_name](#output\_container\_app\_job\_name)
 
-Description:   A map of the private endpoints created.
+Description: The name of the Container App Job.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The ID of the Container App Job.
 
 ## Modules
 

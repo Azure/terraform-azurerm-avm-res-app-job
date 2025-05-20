@@ -1,17 +1,13 @@
 terraform {
-  required_version = "~> 1.5"
+  required_version = ">= 1.9, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.21"
-    }
-    modtm = {
-      source  = "azure/modtm"
-      version = "~> 0.3"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.5"
+      version = ">= 3.0.0"
     }
   }
 }
@@ -47,17 +43,70 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
+resource "azurerm_container_app_environment" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = "my-environment"
+  resource_group_name = azurerm_resource_group.this.name
+}
+
 # This is the module call
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
 # with a data source.
-module "test" {
-  source = "../../"
-  # source             = "Azure/avm-<res/ptn>-<name>/azurerm"
-  # ...
-  location            = azurerm_resource_group.this.location
-  name                = "TODO" # TODO update with module.naming.<RESOURCE_TYPE>.name_unique
-  resource_group_name = azurerm_resource_group.this.name
 
-  enable_telemetry = var.enable_telemetry # see variables.tf
+# This module creates a container app with a manual trigger.
+module "manual_trigger" {
+  source = "../../"
+
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-mt"
+  resource_group_name                   = azurerm_resource_group.this.name
+  template = {
+    container = {
+      name    = "my-container"
+      image   = "docker.io/ubuntu"
+      command = ["echo"]
+      args    = ["Hello, World!"]
+      cpu     = 0.5
+      memory  = "1Gi"
+    }
+  }
+  enable_telemetry = var.enable_telemetry
+  trigger_config = {
+    manual_trigger_config = {
+      parallelism              = 1
+      replica_completion_count = 1
+    }
+  }
+}
+
+# This module creates a container app with a schedule_trigger.
+module "schedule_trigger" {
+  source = "../../"
+
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-st"
+  resource_group_name                   = azurerm_resource_group.this.name
+  template = {
+    container = {
+      name    = "my-container"
+      image   = "docker.io/ubuntu"
+      command = ["echo"]
+      args    = ["Hello, World!"]
+      cpu     = 0.5
+      memory  = "1Gi"
+    }
+  }
+  managed_identities = {
+    system_assigned = true
+  }
+  trigger_config = {
+    schedule_trigger_config = {
+      cron_expression          = "0 * * * *"
+      parallelism              = 1
+      replica_completion_count = 1
+    }
+  }
 }
