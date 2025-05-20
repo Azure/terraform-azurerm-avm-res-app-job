@@ -1,4 +1,4 @@
-output "container_app_job_id" {
+output "resource_id" {
   description = "The ID of the Container App Job."
   value       = azurerm_container_app_job.this.id
 }
