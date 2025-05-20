@@ -104,6 +104,13 @@ variable "template" {
       storage_name = optional(string)
     })))
   })
+  description = <<DESCRIPTION
+The template block describes the configuration for the Container App Job.
+It defines the main container, optional init containers, resource requirements,
+environment variables, probes (liveness, readiness, startup), and volume mounts.
+Use this variable to specify the container image, CPU/memory, commands, arguments,
+environment variables, and any additional configuration needed for the job's execution environment.
+DESCRIPTION
 }
 
 variable "enable_telemetry" {
