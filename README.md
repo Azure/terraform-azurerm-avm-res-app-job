@@ -255,13 +255,13 @@ Default:
 
 The following outputs are exported:
 
-### <a name="output_container_app_job_id"></a> [container\_app\_job\_id](#output\_container\_app\_job\_id)
-
-Description: The ID of the Container App Job.
-
 ### <a name="output_container_app_job_name"></a> [container\_app\_job\_name](#output\_container\_app\_job\_name)
 
 Description: The name of the Container App Job.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: The ID of the Container App Job.
 
 ## Modules
 
