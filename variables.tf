@@ -150,6 +150,43 @@ variable "tags" {
   description = "(Optional) A mapping of tags to assign to the Container App Job."
 }
 
+variable "secrets" {
+  type = list(object({
+    name                = string
+    identity            = optional(string)
+    key_vault_secret_id = optional(string)
+    value               = optional(string)
+  }))
+  default     = []
+  description = <<DESCRIPTION
+A list of secrets for the Container App Job. Each secret can be defined with:
+- `name` - (Required) The secret name.
+- `identity` - (Optional) The identity to use for accessing the Key Vault secret reference. This can either be the Resource ID of a User Assigned Identity, or System for the System Assigned Identity.
+- `key_vault_secret_id` - (Optional) The ID of a Key Vault secret. This can be a versioned or version-less ID.
+- `value` - (Optional) The value for this secret.
+
+NOTE: `identity` must be used together with `key_vault_secret_id`. When using `key_vault_secret_id`, ignore_changes should be used to ignore any changes to value. `value` will be ignored if `key_vault_secret_id` and `identity` are provided.
+DESCRIPTION
+
+  validation {
+    condition = alltrue([
+      for secret in var.secrets : (
+        secret.key_vault_secret_id != null ? secret.identity != null : true
+      )
+    ])
+    error_message = "When key_vault_secret_id is provided, identity must also be provided."
+  }
+
+  validation {
+    condition = alltrue([
+      for secret in var.secrets : (
+        secret.key_vault_secret_id != null || secret.value != null
+      )
+    ])
+    error_message = "Either key_vault_secret_id or value must be provided for each secret."
+  }
+}
+
 variable "trigger_config" {
   type = object({
     manual_trigger_config = optional(object({

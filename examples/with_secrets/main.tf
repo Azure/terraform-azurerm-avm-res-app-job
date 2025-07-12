@@ -49,52 +49,24 @@ resource "azurerm_container_app_environment" "this" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-# This is the module call
-# Do not specify location here due to the randomization above.
-# Leaving location as `null` will cause the module to use the resource group location
-# with a data source.
-
-# This module creates a container app with a manual trigger.
-module "manual_trigger" {
+# This module creates a container app job with secrets
+module "container_app_job_with_secrets" {
   source = "../../"
 
   container_app_environment_resource_id = azurerm_container_app_environment.this.id
   location                              = azurerm_resource_group.this.location
-  name                                  = "${module.naming.container_app.name_unique}-job-mt"
-  resource_group_name                   = azurerm_resource_group.this.name
-  template = {
-    container = {
-      name    = "my-container"
-      image   = "docker.io/ubuntu"
-      command = ["echo"]
-      args    = ["Hello, World!"]
-      cpu     = 0.5
-      memory  = "1Gi"
-    }
-  }
-  enable_telemetry = var.enable_telemetry
-  trigger_config = {
-    manual_trigger_config = {
-      parallelism              = 1
-      replica_completion_count = 1
-    }
-  }
-}
-
-# This module creates a container app with a schedule_trigger.
-module "schedule_trigger" {
-  source = "../../"
-
-  container_app_environment_resource_id = azurerm_container_app_environment.this.id
-  location                              = azurerm_resource_group.this.location
-  name                                  = "${module.naming.container_app.name_unique}-job-st"
+  name                                  = "${module.naming.container_app.name_unique}-job-secrets"
   resource_group_name                   = azurerm_resource_group.this.name
 
-  # Example of using secrets
+  # Define secrets for the container app job
   secrets = [
     {
-      name  = "example-secret"
-      value = "example-secret-value"
+      name  = "my-secret"
+      value = "secret-value"
+    },
+    {
+      name  = "database-password"
+      value = "supersecretpassword"
     }
   ]
 
@@ -106,21 +78,27 @@ module "schedule_trigger" {
       args    = ["Hello, World!"]
       cpu     = 0.5
       memory  = "1Gi"
-      # Example of referencing a secret in environment variables
+      # Environment variables can reference the secrets
       env = [
         {
           name        = "SECRET_VALUE"
-          secret_name = "example-secret"
+          secret_name = "my-secret"
+        },
+        {
+          name        = "DB_PASSWORD"
+          secret_name = "database-password"
+        },
+        {
+          name  = "PLAIN_VALUE"
+          value = "not-a-secret"
         }
       ]
     }
   }
-  managed_identities = {
-    system_assigned = true
-  }
+
+  enable_telemetry = var.enable_telemetry
   trigger_config = {
-    schedule_trigger_config = {
-      cron_expression          = "0 * * * *"
+    manual_trigger_config = {
       parallelism              = 1
       replica_completion_count = 1
     }

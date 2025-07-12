@@ -6,6 +6,17 @@ resource "azurerm_container_app_job" "this" {
   resource_group_name          = var.resource_group_name
   tags                         = var.tags
 
+  dynamic "secret" {
+    for_each = var.secrets
+
+    content {
+      name                = secret.value.name
+      identity            = secret.value.identity
+      key_vault_secret_id = secret.value.key_vault_secret_id
+      value               = secret.value.value
+    }
+  }
+
   dynamic "template" {
     for_each = [var.template]
 
