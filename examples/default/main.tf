@@ -53,33 +53,36 @@ resource "azurerm_container_app_environment" "this" {
   resource_group_name = azurerm_resource_group.this.name
 }
 
-# Service Bus namespace for event trigger example
-resource "azurerm_servicebus_namespace" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = "${module.naming.servicebus_namespace.name_unique}-event-trigger"
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
+# Create a Key Vault for the secret example
+resource "azurerm_key_vault" "example" {
+  location                   = azurerm_resource_group.this.location
+  name                       = module.naming.key_vault.name_unique
+  resource_group_name        = azurerm_resource_group.this.name
+  sku_name                   = "standard"
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  enable_rbac_authorization  = false
+  purge_protection_enabled   = false
+  soft_delete_retention_days = 7
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Purge"
+    ]
+  }
 }
 
-# Service Bus queue for event trigger example
-resource "azurerm_servicebus_queue" "this" {
-  name         = "my-queue"
-  namespace_id = azurerm_servicebus_namespace.this.id
-}
-
-# Service Bus authorization rule for connection string
-resource "azurerm_servicebus_namespace_authorization_rule" "this" {
-  name         = "RootManageSharedAccessKey"
-  namespace_id = azurerm_servicebus_namespace.this.id
-  listen       = true
-}
-
-# Container App Environment secret for Service Bus connection
-resource "azurerm_container_app_environment_certificate" "servicebus_connection" {
-  certificate_blob_base64      = base64encode(azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string)
-  certificate_password         = ""
-  container_app_environment_id = azurerm_container_app_environment.this.id
-  name                         = "servicebus-connection"
+# Create a secret in the Key Vault
+resource "azurerm_key_vault_secret" "example" {
+  key_vault_id = azurerm_key_vault.example.id
+  name         = "my-secret"
+  value        = "secret-value-from-key-vault"
 }
 
 # This is the module call
@@ -169,47 +172,13 @@ module "schedule_trigger" {
   }
 }
 
-# This module creates a container app with an event_trigger.
-module "event_trigger" {
-  source = "../../"
+# Grant the container app job's system-assigned managed identity access to the Key Vault
+resource "azurerm_key_vault_access_policy" "container_app_job" {
+  key_vault_id = azurerm_key_vault.example.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = module.schedule_trigger.managed_identities.system_assigned.principal_id
 
-  container_app_environment_resource_id = azurerm_container_app_environment.this.id
-  location                              = azurerm_resource_group.this.location
-  name                                  = "${module.naming.container_app.name_unique}-job-et"
-  resource_group_name                   = azurerm_resource_group.this.name
-  template = {
-    container = {
-      name    = "my-container"
-      image   = "docker.io/ubuntu"
-      command = ["echo"]
-      args    = ["Hello, World!"]
-      cpu     = 0.5
-      memory  = "1Gi"
-    }
-  }
-  managed_identities = {
-    system_assigned = true
-  }
-  trigger_config = {
-    event_trigger_config = {
-      parallelism              = 1
-      replica_completion_count = 1
-      scale = {
-        max_executions              = 10
-        min_executions              = 1
-        polling_interval_in_seconds = 30
-        rules = {
-          name             = "my-custom-rule"
-          custom_rule_type = "azure-servicebus"
-          metadata = {
-            "queueName" = "my-queue"
-          }
-          authentication = {
-            secret_name       = "servicebus-connection"
-            trigger_parameter = "connection"
-          }
-        }
-      }
-    }
-  }
+  secret_permissions = [
+    "Get"
+  ]
 }
