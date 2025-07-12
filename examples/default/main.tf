@@ -16,6 +16,9 @@ provider "azurerm" {
   features {}
 }
 
+# Get current client configuration for Key Vault access policy
+data "azurerm_client_config" "current" {}
+
 
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
@@ -47,6 +50,38 @@ resource "azurerm_container_app_environment" "this" {
   location            = azurerm_resource_group.this.location
   name                = "my-environment"
   resource_group_name = azurerm_resource_group.this.name
+}
+
+# Create a Key Vault for the secret example
+resource "azurerm_key_vault" "example" {
+  location                   = azurerm_resource_group.this.location
+  name                       = module.naming.key_vault.name_unique
+  resource_group_name        = azurerm_resource_group.this.name
+  sku_name                   = "standard"
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  enable_rbac_authorization  = false
+  purge_protection_enabled   = false
+  soft_delete_retention_days = 7
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Purge"
+    ]
+  }
+}
+
+# Create a secret in the Key Vault
+resource "azurerm_key_vault_secret" "example" {
+  key_vault_id = azurerm_key_vault.example.id
+  name         = "my-secret"
+  value        = "secret-value-from-key-vault"
 }
 
 # This is the module call
@@ -99,7 +134,7 @@ module "schedule_trigger" {
     {
       name                = "kv-secret"
       identity            = "System"
-      key_vault_secret_id = "https://example-vault.vault.azure.net/secrets/my-secret/latest"
+      key_vault_secret_id = azurerm_key_vault_secret.example.id
     }
   ]
 
@@ -134,4 +169,15 @@ module "schedule_trigger" {
       replica_completion_count = 1
     }
   }
+}
+
+# Grant the container app job's system-assigned managed identity access to the Key Vault
+resource "azurerm_key_vault_access_policy" "container_app_job" {
+  key_vault_id = azurerm_key_vault.example.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = module.schedule_trigger.managed_identities.system_assigned.principal_id
+
+  secret_permissions = [
+    "Get"
+  ]
 }

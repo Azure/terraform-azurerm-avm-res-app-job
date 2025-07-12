@@ -1,7 +1,17 @@
 <!-- BEGIN_TF_DOCS -->
 # Default example
 
-This deploys the module in its simplest form, demonstrating both manual and scheduled trigger configurations. The scheduled trigger example also showcases secret management including both plain text secrets and Azure Key Vault integration.
+This deploys the module in its simplest form, demonstrating both manual and scheduled trigger configurations. The scheduled trigger example also showcases comprehensive secret management including:
+
+- **Plain text secrets**: Simple key-value secrets stored directly in the configuration
+- **Azure Key Vault integration**: Secrets stored in Azure Key Vault with system-assigned managed identity access
+- **Environment variable injection**: Referencing secrets in container environment variables
+
+The example creates:
+- A manual trigger Container App Job (simple configuration)
+- A scheduled trigger Container App Job with secrets configuration
+- An Azure Key Vault with a sample secret
+- Proper access policies for the Container App Job's managed identity to read from Key Vault
 
 ```hcl
 terraform {
