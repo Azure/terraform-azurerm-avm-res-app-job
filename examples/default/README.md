@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Default example
 
-This deploys the module in its simplest form.
+This deploys the module in its simplest form, demonstrating both manual and scheduled trigger configurations. The scheduled trigger example also showcases secret management including both plain text secrets and Azure Key Vault integration.
 
 ```hcl
 terraform {

@@ -95,6 +95,11 @@ module "schedule_trigger" {
     {
       name  = "example-secret"
       value = "example-secret-value"
+    },
+    {
+      name                = "kv-secret"
+      identity            = "System"
+      key_vault_secret_id = "https://example-vault.vault.azure.net/secrets/my-secret/latest"
     }
   ]
 
@@ -111,6 +116,10 @@ module "schedule_trigger" {
         {
           name        = "SECRET_VALUE"
           secret_name = "example-secret"
+        },
+        {
+          name        = "KV_SECRET_VALUE"
+          secret_name = "kv-secret"
         }
       ]
     }
