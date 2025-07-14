@@ -47,24 +47,9 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_container_app_environment" "this" {
-  location                   = azurerm_resource_group.this.location
-  name                       = "my-environment"
-  resource_group_name        = azurerm_resource_group.this.name
-  log_analytics_workspace_id = module.log_analytics_workspace.resource_id
-}
-
-module "log_analytics_workspace" {
-  source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  version = "0.4.2"
-
-  location                                  = azurerm_resource_group.this.location
-  name                                      = "la${module.naming.log_analytics_workspace.name_unique}"
-  resource_group_name                       = azurerm_resource_group.this.name
-  log_analytics_workspace_retention_in_days = 30
-  log_analytics_workspace_sku               = "PerGB2018"
-  log_analytics_workspace_identity = {
-    type = "SystemAssigned"
-  }
+  location            = azurerm_resource_group.this.location
+  name                = "my-environment"
+  resource_group_name = azurerm_resource_group.this.name
 }
 
 # Service Bus namespace for event trigger example
@@ -88,6 +73,20 @@ resource "azurerm_servicebus_namespace_authorization_rule" "this" {
   listen       = true
   send         = true
   manage       = true
+}
+
+module "log_analytics_workspace" {
+  source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
+  version = "0.4.2"
+
+  location                                  = azurerm_resource_group.this.location
+  name                                      = "la${module.naming.log_analytics_workspace.name_unique}"
+  resource_group_name                       = azurerm_resource_group.this.name
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
+  log_analytics_workspace_identity = {
+    type = "SystemAssigned"
+  }
 }
 
 # Create a Key Vault for the secret example
