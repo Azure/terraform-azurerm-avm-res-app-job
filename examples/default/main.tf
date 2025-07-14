@@ -68,15 +68,6 @@ resource "azurerm_servicebus_queue" "this" {
   namespace_id = azurerm_servicebus_namespace.this.id
 }
 
-# Service Bus authorization rule for connection string
-resource "azurerm_servicebus_namespace_authorization_rule" "this" {
-  name         = "RootManageSharedAccessKey"
-  namespace_id = azurerm_servicebus_namespace.this.id
-  listen       = true
-  manage       = true
-  send         = true
-}
-
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
   version = "0.4.2"
@@ -242,7 +233,7 @@ module "event_trigger" {
   secrets = [
     {
       name  = "servicebus-connection"
-      value = azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string
+      value = azurerm_servicebus_namespace.this.default_primary_connection_string
     }
   ]
   trigger_config = {
