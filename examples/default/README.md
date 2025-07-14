@@ -74,15 +74,6 @@ resource "azurerm_servicebus_queue" "this" {
   namespace_id = azurerm_servicebus_namespace.this.id
 }
 
-# Service Bus authorization rule for connection string
-resource "azurerm_servicebus_namespace_authorization_rule" "this" {
-  name         = "RootManageSharedAccessKey"
-  namespace_id = azurerm_servicebus_namespace.this.id
-  listen       = true
-  manage       = true
-  send         = true
-}
-
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
   version = "0.4.2"
@@ -248,7 +239,7 @@ module "event_trigger" {
   secrets = [
     {
       name  = "servicebus-connection"
-      value = azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string
+      value = azurerm_servicebus_namespace.this.default_primary_connection_string
     }
   ]
   trigger_config = {
@@ -309,7 +300,6 @@ The following resources are used by this module:
 - [azurerm_key_vault_secret.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_secret) (resource)
 - [azurerm_resource_group.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_servicebus_namespace.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/servicebus_namespace) (resource)
-- [azurerm_servicebus_namespace_authorization_rule.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/servicebus_namespace_authorization_rule) (resource)
 - [azurerm_servicebus_queue.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/servicebus_queue) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
