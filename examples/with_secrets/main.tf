@@ -1,5 +1,6 @@
 terraform {
   required_version = ">= 1.9, < 2.0"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
@@ -57,19 +58,6 @@ module "container_app_job_with_secrets" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-secrets"
   resource_group_name                   = azurerm_resource_group.this.name
-
-  # Define secrets for the container app job
-  secrets = [
-    {
-      name  = "my-secret"
-      value = "secret-value"
-    },
-    {
-      name  = "database-password"
-      value = "supersecretpassword"
-    }
-  ]
-
   template = {
     container = {
       name    = "my-container"
@@ -95,8 +83,18 @@ module "container_app_job_with_secrets" {
       ]
     }
   }
-
   enable_telemetry = var.enable_telemetry
+  # Define secrets for the container app job
+  secrets = [
+    {
+      name  = "my-secret"
+      value = "secret-value"
+    },
+    {
+      name  = "database-password"
+      value = "supersecretpassword"
+    }
+  ]
   trigger_config = {
     manual_trigger_config = {
       parallelism              = 1

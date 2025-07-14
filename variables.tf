@@ -144,12 +144,6 @@ variable "replica_timeout_in_seconds" {
   description = "The timeout in seconds for the job to complete."
 }
 
-variable "tags" {
-  type        = map(string)
-  default     = null
-  description = "(Optional) A mapping of tags to assign to the Container App Job."
-}
-
 variable "secrets" {
   type = list(object({
     name                = string
@@ -176,7 +170,6 @@ DESCRIPTION
     ])
     error_message = "When key_vault_secret_id is provided, identity must also be provided."
   }
-
   validation {
     condition = alltrue([
       for secret in var.secrets : (
@@ -185,6 +178,12 @@ DESCRIPTION
     ])
     error_message = "Either key_vault_secret_id or value must be provided for each secret."
   }
+}
+
+variable "tags" {
+  type        = map(string)
+  default     = null
+  description = "(Optional) A mapping of tags to assign to the Container App Job."
 }
 
 variable "trigger_config" {

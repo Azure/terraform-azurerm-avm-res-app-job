@@ -71,22 +71,22 @@ resource "azurerm_servicebus_namespace_authorization_rule" "this" {
   name         = "RootManageSharedAccessKey"
   namespace_id = azurerm_servicebus_namespace.this.id
   listen       = true
-  send         = true
   manage       = true
+  send         = true
 }
 
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
   version = "0.4.2"
 
-  location                                  = azurerm_resource_group.this.location
-  name                                      = "la${module.naming.log_analytics_workspace.name_unique}"
-  resource_group_name                       = azurerm_resource_group.this.name
-  log_analytics_workspace_retention_in_days = 30
-  log_analytics_workspace_sku               = "PerGB2018"
+  location            = azurerm_resource_group.this.location
+  name                = "la${module.naming.log_analytics_workspace.name_unique}"
+  resource_group_name = azurerm_resource_group.this.name
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
 }
 
 # Create a Key Vault for the secret example
@@ -101,9 +101,7 @@ resource "azurerm_key_vault" "example" {
   soft_delete_retention_days = 7
 
   access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
     object_id = data.azurerm_client_config.current.object_id
-
     secret_permissions = [
       "Get",
       "List",
@@ -111,6 +109,7 @@ resource "azurerm_key_vault" "example" {
       "Delete",
       "Purge"
     ]
+    tenant_id = data.azurerm_client_config.current.tenant_id
   }
 }
 
@@ -161,20 +160,6 @@ module "schedule_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-st"
   resource_group_name                   = azurerm_resource_group.this.name
-
-  # Example of using secrets
-  secrets = [
-    {
-      name  = "example-secret"
-      value = "example-secret-value"
-    },
-    {
-      name                = "kv-secret"
-      identity            = "System"
-      key_vault_secret_id = azurerm_key_vault_secret.example.id
-    }
-  ]
-
   template = {
     container = {
       name    = "my-container"
@@ -199,6 +184,18 @@ module "schedule_trigger" {
   managed_identities = {
     system_assigned = true
   }
+  # Example of using secrets
+  secrets = [
+    {
+      name  = "example-secret"
+      value = "example-secret-value"
+    },
+    {
+      name                = "kv-secret"
+      identity            = "System"
+      key_vault_secret_id = azurerm_key_vault_secret.example.id
+    }
+  ]
   trigger_config = {
     schedule_trigger_config = {
       cron_expression          = "0 * * * *"
@@ -211,9 +208,8 @@ module "schedule_trigger" {
 # Grant the container app job's system-assigned managed identity access to the Key Vault
 resource "azurerm_key_vault_access_policy" "container_app_job" {
   key_vault_id = azurerm_key_vault.example.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
   object_id    = module.schedule_trigger.managed_identities.system_assigned.principal_id
-
+  tenant_id    = data.azurerm_client_config.current.tenant_id
   secret_permissions = [
     "Get"
   ]
@@ -227,7 +223,6 @@ module "event_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-et"
   resource_group_name                   = azurerm_resource_group.this.name
-
   template = {
     container = {
       name    = "my-container"
@@ -238,7 +233,9 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
-
+  managed_identities = {
+    system_assigned = true
+  }
   # Example of using secrets
   secrets = [
     {
@@ -246,9 +243,6 @@ module "event_trigger" {
       value = azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string
     }
   ]
-  managed_identities = {
-    system_assigned = true
-  }
   trigger_config = {
     event_trigger_config = {
       parallelism              = 1

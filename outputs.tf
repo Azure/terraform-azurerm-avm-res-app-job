@@ -3,11 +3,6 @@ output "container_app_job_name" {
   value       = azurerm_container_app_job.this.name
 }
 
-output "resource_id" {
-  description = "The ID of the Container App Job."
-  value       = azurerm_container_app_job.this.id
-}
-
 output "managed_identities" {
   description = "The managed identities for the Container App Job."
   value = {
@@ -22,4 +17,9 @@ output "managed_identities" {
       }
     } : null
   }
+}
+
+output "resource_id" {
+  description = "The ID of the Container App Job."
+  value       = azurerm_container_app_job.this.id
 }
