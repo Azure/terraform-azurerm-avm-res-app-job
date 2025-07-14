@@ -71,6 +71,35 @@ resource "azurerm_container_app_job" "this" {
     content {
       parallelism              = event_trigger_config.value.parallelism
       replica_completion_count = event_trigger_config.value.replica_completion_count
+
+      dynamic "scale" {
+        for_each = event_trigger_config.value.scale == null ? [] : [event_trigger_config.value.scale]
+
+        content {
+          max_executions              = scale.value.max_executions
+          min_executions              = scale.value.min_executions
+          polling_interval_in_seconds = scale.value.polling_interval_in_seconds
+
+          dynamic "rules" {
+            for_each = scale.value.rules == null ? [] : [scale.value.rules]
+
+            content {
+              custom_rule_type = rules.value.custom_rule_type
+              metadata         = rules.value.metadata
+              name             = rules.value.name
+
+              dynamic "authentication" {
+                for_each = rules.value.authentication == null ? [] : [rules.value.authentication]
+
+                content {
+                  secret_name       = authentication.value.secret_name
+                  trigger_parameter = authentication.value.trigger_parameter
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
   dynamic "identity" {
