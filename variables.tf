@@ -200,7 +200,7 @@ variable "trigger_config" {
         max_executions              = optional(number)
         min_executions              = optional(number)
         polling_interval_in_seconds = optional(number)
-        rules = optional(object({
+        rules = optional(list(object({
           name             = optional(string)
           custom_rule_type = optional(string)
           metadata         = optional(map(string))
@@ -208,7 +208,7 @@ variable "trigger_config" {
             secret_name       = optional(string)
             trigger_parameter = optional(string)
           }))
-        }))
+        })))
       }))
     }))
     schedule_trigger_config = optional(object({

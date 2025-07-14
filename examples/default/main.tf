@@ -48,9 +48,24 @@ resource "azurerm_resource_group" "this" {
 }
 
 resource "azurerm_container_app_environment" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = "my-environment"
-  resource_group_name = azurerm_resource_group.this.name
+  location                   = azurerm_resource_group.this.location
+  name                       = "my-environment"
+  resource_group_name        = azurerm_resource_group.this.name
+  log_analytics_workspace_id = module.log_analytics_workspace.resource_id
+}
+
+module "log_analytics_workspace" {
+  source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
+  version = "0.4.2"
+
+  location                                  = azurerm_resource_group.this.location
+  name                                      = "la${module.naming.log_analytics_workspace.name_unique}"
+  resource_group_name                       = azurerm_resource_group.this.name
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
+  log_analytics_workspace_identity = {
+    type = "SystemAssigned"
+  }
 }
 
 # Create a Key Vault for the secret example
@@ -83,6 +98,29 @@ resource "azurerm_key_vault_secret" "example" {
   key_vault_id = azurerm_key_vault.example.id
   name         = "my-secret"
   value        = "secret-value-from-key-vault"
+}
+
+# Service Bus namespace for event trigger example
+resource "azurerm_servicebus_namespace" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = "${module.naming.servicebus_namespace.name_unique}-event-trigger"
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+}
+
+# Service Bus queue for event trigger example
+resource "azurerm_servicebus_queue" "this" {
+  name         = "my-queue"
+  namespace_id = azurerm_servicebus_namespace.this.id
+}
+
+# Service Bus authorization rule for connection string
+resource "azurerm_servicebus_namespace_authorization_rule" "this" {
+  name         = "RootManageSharedAccessKey"
+  namespace_id = azurerm_servicebus_namespace.this.id
+  listen       = true
+  send         = true
+  manage       = true
 }
 
 # This is the module call
@@ -181,4 +219,70 @@ resource "azurerm_key_vault_access_policy" "container_app_job" {
   secret_permissions = [
     "Get"
   ]
+}
+
+# This module creates a container app with an event_trigger.
+module "event_trigger" {
+  source = "../../"
+
+  container_app_environment_resource_id = azurerm_container_app_environment.this.id
+  location                              = azurerm_resource_group.this.location
+  name                                  = "${module.naming.container_app.name_unique}-job-et"
+  resource_group_name                   = azurerm_resource_group.this.name
+
+  template = {
+    container = {
+      name    = "my-container"
+      image   = "docker.io/ubuntu"
+      command = ["echo"]
+      args    = ["Hello, World!"]
+      cpu     = 0.5
+      memory  = "1Gi"
+    }
+  }
+
+  # Example of using secrets
+  secrets = [
+    {
+      name  = "servicebus-connection"
+      value = azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string
+    }
+  ]
+  managed_identities = {
+    system_assigned = true
+  }
+  trigger_config = {
+    event_trigger_config = {
+      parallelism              = 1
+      replica_completion_count = 1
+      scale = {
+        max_executions              = 10
+        min_executions              = 0
+        polling_interval_in_seconds = 30
+        rules = [
+          {
+            name             = "my-custom-rule"
+            custom_rule_type = "azure-servicebus"
+            metadata = {
+              "queueName" = azurerm_servicebus_queue.this.name
+              "namespace" = azurerm_servicebus_namespace.this.name
+            }
+            authentication = {
+              secret_name       = "servicebus-connection"
+              trigger_parameter = "connection"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+module "containerregistry" {
+  source  = "Azure/avm-res-containerregistry-registry/azurerm"
+  version = "0.4.0"
+
+  location            = azurerm_resource_group.this.location
+  name                = "acr${module.naming.container_registry.name_unique}"
+  resource_group_name = azurerm_resource_group.this.name
 }

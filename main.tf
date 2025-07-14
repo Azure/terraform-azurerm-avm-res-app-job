@@ -92,7 +92,7 @@ resource "azurerm_container_app_job" "this" {
           polling_interval_in_seconds = scale.value.polling_interval_in_seconds
 
           dynamic "rules" {
-            for_each = scale.value.rules == null ? [] : [scale.value.rules]
+            for_each = scale.value.rules == null ? [] : scale.value.rules
 
             content {
               custom_rule_type = rules.value.custom_rule_type
