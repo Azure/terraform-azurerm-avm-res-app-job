@@ -31,6 +31,8 @@ data "azurerm_client_config" "current" {}
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "~> 0.1"
+
+  geography_filter = "United States"
 }
 
 # This allows us to randomize the region for the resource group.
