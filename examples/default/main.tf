@@ -20,7 +20,6 @@ provider "azurerm" {
 # Get current client configuration for Key Vault access policy
 data "azurerm_client_config" "current" {}
 
-
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
 module "regions" {
@@ -68,6 +67,29 @@ module "log_analytics_workspace" {
   }
 }
 
+# Service Bus namespace for event trigger example
+resource "azurerm_servicebus_namespace" "this" {
+  location            = azurerm_resource_group.this.location
+  name                = "${module.naming.servicebus_namespace.name_unique}-event-trigger"
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+}
+
+# Service Bus queue for event trigger example
+resource "azurerm_servicebus_queue" "this" {
+  name         = "my-queue"
+  namespace_id = azurerm_servicebus_namespace.this.id
+}
+
+# Service Bus authorization rule for connection string
+resource "azurerm_servicebus_namespace_authorization_rule" "this" {
+  name         = "RootManageSharedAccessKey"
+  namespace_id = azurerm_servicebus_namespace.this.id
+  listen       = true
+  send         = true
+  manage       = true
+}
+
 # Create a Key Vault for the secret example
 resource "azurerm_key_vault" "example" {
   location                   = azurerm_resource_group.this.location
@@ -98,29 +120,6 @@ resource "azurerm_key_vault_secret" "example" {
   key_vault_id = azurerm_key_vault.example.id
   name         = "my-secret"
   value        = "secret-value-from-key-vault"
-}
-
-# Service Bus namespace for event trigger example
-resource "azurerm_servicebus_namespace" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = "${module.naming.servicebus_namespace.name_unique}-event-trigger"
-  resource_group_name = azurerm_resource_group.this.name
-  sku                 = "Standard"
-}
-
-# Service Bus queue for event trigger example
-resource "azurerm_servicebus_queue" "this" {
-  name         = "my-queue"
-  namespace_id = azurerm_servicebus_namespace.this.id
-}
-
-# Service Bus authorization rule for connection string
-resource "azurerm_servicebus_namespace_authorization_rule" "this" {
-  name         = "RootManageSharedAccessKey"
-  namespace_id = azurerm_servicebus_namespace.this.id
-  listen       = true
-  send         = true
-  manage       = true
 }
 
 # This is the module call
