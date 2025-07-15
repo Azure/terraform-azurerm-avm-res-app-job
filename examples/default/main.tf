@@ -265,11 +265,4 @@ module "event_trigger" {
   }
 }
 
-module "containerregistry" {
-  source  = "Azure/avm-res-containerregistry-registry/azurerm"
-  version = "0.4.0"
 
-  location            = azurerm_resource_group.this.location
-  name                = "acr${module.naming.container_registry.name_unique}"
-  resource_group_name = azurerm_resource_group.this.name
-}
