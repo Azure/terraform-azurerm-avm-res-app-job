@@ -56,6 +56,30 @@ resource "azurerm_container_app_job" "this" {
               }
             }
           }
+
+          dynamic "readiness_probe" {
+            for_each = container.value.readiness_probe == null ? [] : container.value.readiness_probe
+
+            content {
+              failure_count_threshold = readiness_probe.value.failure_count_threshold
+              host                    = readiness_probe.value.host
+              interval_seconds        = readiness_probe.value.interval_seconds
+              path                    = readiness_probe.value.path
+              port                    = readiness_probe.value.port
+              success_count_threshold = readiness_probe.value.success_count_threshold
+              timeout                 = readiness_probe.value.timeout
+              transport               = readiness_probe.value.transport
+
+              dynamic "header" {
+                for_each = readiness_probe.value.header == null ? [] : readiness_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
         }
       }
       dynamic "init_container" {
