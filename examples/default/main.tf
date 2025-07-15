@@ -92,18 +92,6 @@ resource "azurerm_key_vault" "example" {
   enable_rbac_authorization  = false
   purge_protection_enabled   = false
   soft_delete_retention_days = 7
-
-  access_policy {
-    object_id = data.azurerm_client_config.current.object_id
-    secret_permissions = [
-      "Get",
-      "List",
-      "Set",
-      "Delete",
-      "Purge"
-    ]
-    tenant_id = data.azurerm_client_config.current.tenant_id
-  }
 }
 
 # Create a secret in the Key Vault
@@ -136,7 +124,6 @@ module "manual_trigger" {
       memory  = "1Gi"
     }
   }
-  enable_telemetry = var.enable_telemetry
   trigger_config = {
     manual_trigger_config = {
       parallelism              = 1
@@ -174,7 +161,6 @@ module "schedule_trigger" {
       ]
     }
   }
-  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
@@ -227,7 +213,6 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
-  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
