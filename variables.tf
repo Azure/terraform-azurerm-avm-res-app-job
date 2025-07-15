@@ -113,6 +113,18 @@ environment variables, and any additional configuration needed for the job's exe
 DESCRIPTION
 }
 
+variable "replica_retry_limit" {
+  type        = number
+  default     = null
+  description = "(Optional) The maximum number of retries before considering a Container App Job execution failed."
+}
+
+variable "workload_profile_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The name of the workload profile within the Container App Environment to place this Container App Job."
+}
+
 variable "enable_telemetry" {
   type        = bool
   default     = true

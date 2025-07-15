@@ -2,9 +2,11 @@ resource "azurerm_container_app_job" "this" {
   container_app_environment_id = var.container_app_environment_resource_id
   location                     = var.location
   name                         = var.name
+  replica_retry_limit          = var.replica_retry_limit
   replica_timeout_in_seconds   = var.replica_timeout_in_seconds
   resource_group_name          = var.resource_group_name
   tags                         = var.tags
+  workload_profile_name        = var.workload_profile_name
 
   dynamic "template" {
     for_each = [var.template]
