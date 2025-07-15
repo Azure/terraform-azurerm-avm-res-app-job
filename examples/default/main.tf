@@ -99,7 +99,6 @@ module "manual_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-mt"
   resource_group_name                   = azurerm_resource_group.this.name
-  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
@@ -110,6 +109,7 @@ module "manual_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   trigger_config = {
     manual_trigger_config = {
       parallelism              = 1
@@ -126,7 +126,6 @@ module "schedule_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-st"
   resource_group_name                   = azurerm_resource_group.this.name
-  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
@@ -144,6 +143,7 @@ module "schedule_trigger" {
       ]
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
@@ -164,7 +164,6 @@ module "event_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-et"
   resource_group_name                   = azurerm_resource_group.this.name
-  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
@@ -175,6 +174,7 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }

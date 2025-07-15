@@ -61,6 +61,7 @@ module "log_analytics_workspace" {
   location            = azurerm_resource_group.this.location
   name                = "la${module.naming.log_analytics_workspace.name_unique}"
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -114,6 +115,7 @@ module "manual_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   trigger_config = {
     manual_trigger_config = {
       parallelism              = 1
@@ -147,6 +149,7 @@ module "schedule_trigger" {
       ]
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
@@ -177,6 +180,7 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
