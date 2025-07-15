@@ -134,6 +134,15 @@ resource "azurerm_container_app_job" "this" {
               value       = env.value.value
             }
           }
+
+          dynamic "volume_mounts" {
+            for_each = init_container.value.volume_mounts == null ? [] : init_container.value.volume_mounts
+
+            content {
+              name = volume_mounts.value.name
+              path = volume_mounts.value.path
+            }
+          }
         }
       }
       dynamic "volume" {
