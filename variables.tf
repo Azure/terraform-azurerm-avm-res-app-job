@@ -97,6 +97,52 @@ variable "template" {
         secret_name = optional(string)
         value       = optional(string)
       })))
+      liveness_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        period                  = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host             = optional(string)
+        initial_delay    = optional(number)
+        interval_seconds = optional(number)
+        path             = optional(string)
+        timeout          = optional(number)
+      })))
+      readiness_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host                    = optional(string)
+        interval_seconds        = optional(number)
+        path                    = optional(string)
+        success_count_threshold = optional(number)
+        timeout                 = optional(number)
+      })))
+      startup_probe = optional(list(object({
+        port                    = number
+        transport               = string
+        failure_count_threshold = number
+        header = optional(list(object({
+          name  = string
+          value = string
+        })))
+        host             = optional(string)
+        interval_seconds = optional(number)
+        path             = optional(string)
+        timeout          = optional(number)
+      })))
+      volume_mounts = optional(list(object({
+        name = string
+        path = string
+      })))
     })))
     volume = optional(list(object({
       name         = optional(string)
