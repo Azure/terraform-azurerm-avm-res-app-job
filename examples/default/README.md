@@ -137,13 +137,6 @@ module "schedule_trigger" {
       args    = ["Hello, World!"]
       cpu     = 0.5
       memory  = "1Gi"
-      # Example of referencing a secret in environment variables
-      env = [
-        {
-          name        = "SECRET_VALUE"
-          secret_name = "example-secret"
-        }
-      ]
     }
   }
   enable_telemetry = var.enable_telemetry
@@ -207,8 +200,6 @@ module "event_trigger" {
     }
   }
 }
-
-
 ```
 
 <!-- markdownlint-disable MD033 -->
