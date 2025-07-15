@@ -55,6 +55,7 @@ module "log_analytics_workspace" {
   location            = azurerm_resource_group.this.location
   name                = "la${module.naming.log_analytics_workspace.name_unique}"
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -98,6 +99,7 @@ module "manual_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-mt"
   resource_group_name                   = azurerm_resource_group.this.name
+  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
@@ -124,6 +126,7 @@ module "schedule_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-st"
   resource_group_name                   = azurerm_resource_group.this.name
+  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
@@ -161,6 +164,7 @@ module "event_trigger" {
   location                              = azurerm_resource_group.this.location
   name                                  = "${module.naming.container_app.name_unique}-job-et"
   resource_group_name                   = azurerm_resource_group.this.name
+  enable_telemetry                      = var.enable_telemetry
   template = {
     container = {
       name    = "my-container"
