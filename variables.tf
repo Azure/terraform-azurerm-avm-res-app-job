@@ -117,6 +117,34 @@ environment variables, and any additional configuration needed for the job's exe
 DESCRIPTION
 }
 
+variable "registries" {
+  type = list(object({
+    identity             = optional(string)
+    password_secret_name = optional(string)
+    server               = string
+    username             = optional(string)
+  }))
+  default     = []
+  description = <<DESCRIPTION
+A list of container registries used by the Container App Job. Each registry can be defined with:
+- `identity` - (Optional) The identity to use for accessing the registry. This can either be the Resource ID of a User Assigned Identity, or System for the System Assigned Identity.
+- `password_secret_name` - (Optional) The name of the secret that contains the registry password.
+- `server` - (Required) The hostname of the registry server.
+- `username` - (Optional) The username to use for this registry.
+
+NOTE: `identity` cannot be used with `username` and `password_secret_name`. When using `identity`, the identity must have access to the container registry.
+DESCRIPTION
+
+  validation {
+    condition = alltrue([
+      for registry in var.registries : (
+        registry.identity != null ? (registry.username == null && registry.password_secret_name == null) : true
+      )
+    ])
+    error_message = "When identity is provided, username and password_secret_name must not be provided."
+  }
+}
+
 variable "replica_retry_limit" {
   type        = number
   default     = null

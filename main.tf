@@ -201,6 +201,16 @@ resource "azurerm_container_app_job" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
+  dynamic "registry" {
+    for_each = var.registries
+
+    content {
+      identity             = registry.value.identity
+      password_secret_name = registry.value.password_secret_name
+      server               = registry.value.server
+      username             = registry.value.username
+    }
+  }
   dynamic "manual_trigger_config" {
     for_each = var.trigger_config.manual_trigger_config == null ? [] : [var.trigger_config.manual_trigger_config]
 
