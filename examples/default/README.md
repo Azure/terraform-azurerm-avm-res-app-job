@@ -271,14 +271,7 @@ module "event_trigger" {
   }
 }
 
-module "containerregistry" {
-  source  = "Azure/avm-res-containerregistry-registry/azurerm"
-  version = "0.4.0"
 
-  location            = azurerm_resource_group.this.location
-  name                = "acr${module.naming.container_registry.name_unique}"
-  resource_group_name = azurerm_resource_group.this.name
-}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -323,7 +316,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 
@@ -332,12 +325,6 @@ No outputs.
 ## Modules
 
 The following Modules are called:
-
-### <a name="module_containerregistry"></a> [containerregistry](#module\_containerregistry)
-
-Source: Azure/avm-res-containerregistry-registry/azurerm
-
-Version: 0.4.0
 
 ### <a name="module_event_trigger"></a> [event\_trigger](#module\_event\_trigger)
 
