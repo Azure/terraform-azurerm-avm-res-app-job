@@ -17,12 +17,13 @@ provider "azurerm" {
   features {}
 }
 
-
 ## Section to provide a random Azure region for the resource group
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
   version = "~> 0.1"
+
+  geography_filter = "United States"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -44,10 +45,26 @@ resource "azurerm_resource_group" "this" {
   name     = module.naming.resource_group.name_unique
 }
 
-resource "azurerm_container_app_environment" "this" {
+module "log_analytics_workspace" {
+  source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
+  version = "0.4.2"
+
   location            = azurerm_resource_group.this.location
-  name                = "my-environment"
+  name                = "la${module.naming.log_analytics_workspace.name_unique}"
   resource_group_name = azurerm_resource_group.this.name
+  enable_telemetry    = var.enable_telemetry
+  log_analytics_workspace_identity = {
+    type = "SystemAssigned"
+  }
+  log_analytics_workspace_retention_in_days = 30
+  log_analytics_workspace_sku               = "PerGB2018"
+}
+
+resource "azurerm_container_app_environment" "this" {
+  location                   = azurerm_resource_group.this.location
+  name                       = "my-environment"
+  resource_group_name        = azurerm_resource_group.this.name
+  log_analytics_workspace_id = module.log_analytics_workspace.resource_id
 }
 
 # Service Bus namespace for event trigger example
@@ -62,21 +79,6 @@ resource "azurerm_servicebus_namespace" "this" {
 resource "azurerm_servicebus_queue" "this" {
   name         = "my-queue"
   namespace_id = azurerm_servicebus_namespace.this.id
-}
-
-# Service Bus authorization rule for connection string
-resource "azurerm_servicebus_namespace_authorization_rule" "this" {
-  name         = "RootManageSharedAccessKey"
-  namespace_id = azurerm_servicebus_namespace.this.id
-  listen       = true
-}
-
-# Container App Environment secret for Service Bus connection
-resource "azurerm_container_app_environment_certificate" "servicebus_connection" {
-  certificate_blob_base64      = base64encode(azurerm_servicebus_namespace_authorization_rule.this.primary_connection_string)
-  certificate_password         = ""
-  container_app_environment_id = azurerm_container_app_environment.this.id
-  name                         = "servicebus-connection"
 }
 
 # This is the module call
@@ -129,6 +131,7 @@ module "schedule_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
@@ -159,28 +162,39 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
+  # Example of using secrets
+  secrets = [
+    {
+      name  = "servicebus-connection"
+      value = azurerm_servicebus_namespace.this.default_primary_connection_string
+    }
+  ]
   trigger_config = {
     event_trigger_config = {
       parallelism              = 1
       replica_completion_count = 1
       scale = {
         max_executions              = 10
-        min_executions              = 1
+        min_executions              = 0
         polling_interval_in_seconds = 30
-        rules = {
-          name             = "my-custom-rule"
-          custom_rule_type = "azure-servicebus"
-          metadata = {
-            "queueName" = "my-queue"
+        rules = [
+          {
+            name             = "my-custom-rule"
+            custom_rule_type = "azure-servicebus"
+            metadata = {
+              "queueName" = azurerm_servicebus_queue.this.name
+              "namespace" = azurerm_servicebus_namespace.this.name
+            }
+            authentication = {
+              secret_name       = "servicebus-connection"
+              trigger_parameter = "connection"
+            }
           }
-          authentication = {
-            secret_name       = "servicebus-connection"
-            trigger_parameter = "connection"
-          }
-        }
+        ]
       }
     }
   }

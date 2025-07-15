@@ -81,7 +81,7 @@ resource "azurerm_container_app_job" "this" {
           polling_interval_in_seconds = scale.value.polling_interval_in_seconds
 
           dynamic "rules" {
-            for_each = scale.value.rules == null ? [] : [scale.value.rules]
+            for_each = scale.value.rules == null ? [] : scale.value.rules
 
             content {
               custom_rule_type = rules.value.custom_rule_type
@@ -125,6 +125,16 @@ resource "azurerm_container_app_job" "this" {
       cron_expression          = schedule_trigger_config.value.cron_expression
       parallelism              = schedule_trigger_config.value.parallelism
       replica_completion_count = schedule_trigger_config.value.replica_completion_count
+    }
+  }
+  dynamic "secret" {
+    for_each = var.secrets
+
+    content {
+      name                = secret.value.name
+      identity            = secret.value.identity
+      key_vault_secret_id = secret.value.key_vault_secret_id
+      value               = secret.value.value
     }
   }
 }
