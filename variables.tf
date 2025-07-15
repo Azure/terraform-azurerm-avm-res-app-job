@@ -117,6 +117,31 @@ environment variables, and any additional configuration needed for the job's exe
 DESCRIPTION
 }
 
+variable "enable_telemetry" {
+  type        = bool
+  default     = true
+  description = <<DESCRIPTION
+This variable controls whether or not telemetry is enabled for the module.
+For more information see <https://aka.ms/avm/telemetryinfo>.
+If it is set to false, then no telemetry will be collected.
+DESCRIPTION
+}
+
+variable "managed_identities" {
+  type = object({
+    system_assigned            = optional(bool, false)
+    user_assigned_resource_ids = optional(set(string), [])
+  })
+  default     = {}
+  description = <<DESCRIPTION
+  Controls the Managed Identity configuration on this resource. The following properties can be specified:
+
+  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
+  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
+  DESCRIPTION
+  nullable    = false
+}
+
 variable "registries" {
   type = list(object({
     identity             = optional(string)
@@ -149,37 +174,6 @@ variable "replica_retry_limit" {
   type        = number
   default     = null
   description = "(Optional) The maximum number of retries before considering a Container App Job execution failed."
-}
-
-variable "workload_profile_name" {
-  type        = string
-  default     = null
-  description = "(Optional) The name of the workload profile within the Container App Environment to place this Container App Job."
-}
-
-variable "enable_telemetry" {
-  type        = bool
-  default     = true
-  description = <<DESCRIPTION
-This variable controls whether or not telemetry is enabled for the module.
-For more information see <https://aka.ms/avm/telemetryinfo>.
-If it is set to false, then no telemetry will be collected.
-DESCRIPTION
-}
-
-variable "managed_identities" {
-  type = object({
-    system_assigned            = optional(bool, false)
-    user_assigned_resource_ids = optional(set(string), [])
-  })
-  default     = {}
-  description = <<DESCRIPTION
-  Controls the Managed Identity configuration on this resource. The following properties can be specified:
-
-  - `system_assigned` - (Optional) Specifies if the System Assigned Managed Identity should be enabled.
-  - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
-  DESCRIPTION
-  nullable    = false
 }
 
 variable "replica_timeout_in_seconds" {
@@ -276,4 +270,10 @@ variable "trigger_config" {
     ) == 1
     error_message = "Only one of manual_trigger_config, event_trigger_config, or schedule_trigger_config can be specified."
   }
+}
+
+variable "workload_profile_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The name of the workload profile within the Container App Environment to place this Container App Job."
 }
