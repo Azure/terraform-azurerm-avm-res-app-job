@@ -32,6 +32,30 @@ resource "azurerm_container_app_job" "this" {
               value       = env.value.value
             }
           }
+
+          dynamic "liveness_probe" {
+            for_each = container.value.liveness_probe == null ? [] : container.value.liveness_probe
+
+            content {
+              failure_count_threshold = liveness_probe.value.failure_count_threshold
+              host                    = liveness_probe.value.host
+              initial_delay           = liveness_probe.value.initial_delay
+              interval_seconds        = liveness_probe.value.interval_seconds
+              path                    = liveness_probe.value.path
+              port                    = liveness_probe.value.port
+              timeout                 = liveness_probe.value.timeout
+              transport               = liveness_probe.value.transport
+
+              dynamic "header" {
+                for_each = liveness_probe.value.header == null ? [] : liveness_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
         }
       }
       dynamic "init_container" {
