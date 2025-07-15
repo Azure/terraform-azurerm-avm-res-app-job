@@ -80,6 +80,29 @@ resource "azurerm_container_app_job" "this" {
               }
             }
           }
+
+          dynamic "startup_probe" {
+            for_each = container.value.startup_probe == null ? [] : container.value.startup_probe
+
+            content {
+              failure_count_threshold = startup_probe.value.failure_count_threshold
+              host                    = startup_probe.value.host
+              interval_seconds        = startup_probe.value.interval_seconds
+              path                    = startup_probe.value.path
+              port                    = startup_probe.value.port
+              timeout                 = startup_probe.value.timeout
+              transport               = startup_probe.value.transport
+
+              dynamic "header" {
+                for_each = startup_probe.value.header == null ? [] : startup_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
         }
       }
       dynamic "init_container" {
