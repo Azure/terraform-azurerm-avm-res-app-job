@@ -103,6 +103,15 @@ resource "azurerm_container_app_job" "this" {
               }
             }
           }
+
+          dynamic "volume_mounts" {
+            for_each = container.value.volume_mounts == null ? [] : container.value.volume_mounts
+
+            content {
+              name = volume_mounts.value.name
+              path = volume_mounts.value.path
+            }
+          }
         }
       }
       dynamic "init_container" {
