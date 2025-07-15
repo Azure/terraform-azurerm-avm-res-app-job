@@ -87,8 +87,6 @@ resource "azurerm_servicebus_queue" "this" {
   namespace_id = azurerm_servicebus_namespace.this.id
 }
 
-
-
 # This is the module call
 # Do not specify location here due to the randomization above.
 # Leaving location as `null` will cause the module to use the resource group location
@@ -174,6 +172,13 @@ module "event_trigger" {
   managed_identities = {
     system_assigned = true
   }
+  # Example of using secrets
+  secrets = [
+    {
+      name  = "servicebus-connection"
+      value = azurerm_servicebus_namespace.this.default_primary_connection_string
+    }
+  ]
   trigger_config = {
     event_trigger_config = {
       parallelism              = 1
