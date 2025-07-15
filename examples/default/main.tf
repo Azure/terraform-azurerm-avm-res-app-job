@@ -174,6 +174,7 @@ module "schedule_trigger" {
       ]
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
@@ -226,6 +227,7 @@ module "event_trigger" {
       memory  = "1Gi"
     }
   }
+  enable_telemetry = var.enable_telemetry
   managed_identities = {
     system_assigned = true
   }
