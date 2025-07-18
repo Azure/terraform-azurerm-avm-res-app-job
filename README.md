@@ -159,6 +159,10 @@ object({
         secret_name = optional(string)
         value       = optional(string)
       })))
+      volume_mounts = optional(list(object({
+        name = string
+        path = string
+      })))
     })))
     volume = optional(list(object({
       name         = optional(string)
@@ -199,6 +203,37 @@ object({
 ```
 
 Default: `{}`
+
+### <a name="input_registries"></a> [registries](#input\_registries)
+
+Description: A list of container registries used by the Container App Job. Each registry can be defined with:
+- `identity` - (Optional) The identity to use for accessing the registry. This can either be the Resource ID of a User Assigned Identity, or System for the System Assigned Identity.
+- `password_secret_name` - (Optional) The name of the secret that contains the registry password.
+- `server` - (Required) The hostname of the registry server.
+- `username` - (Optional) The username to use for this registry.
+
+NOTE: `identity` cannot be used with `username` and `password_secret_name`. When using `identity`, the identity must have access to the container registry.
+
+Type:
+
+```hcl
+list(object({
+    identity             = optional(string)
+    password_secret_name = optional(string)
+    server               = string
+    username             = optional(string)
+  }))
+```
+
+Default: `[]`
+
+### <a name="input_replica_retry_limit"></a> [replica\_retry\_limit](#input\_replica\_retry\_limit)
+
+Description: (Optional) The maximum number of retries before considering a Container App Job execution failed.
+
+Type: `number`
+
+Default: `null`
 
 ### <a name="input_replica_timeout_in_seconds"></a> [replica\_timeout\_in\_seconds](#input\_replica\_timeout\_in\_seconds)
 
@@ -287,6 +322,14 @@ Default:
   }
 }
 ```
+
+### <a name="input_workload_profile_name"></a> [workload\_profile\_name](#input\_workload\_profile\_name)
+
+Description: (Optional) The name of the workload profile within the Container App Environment to place this Container App Job.
+
+Type: `string`
+
+Default: `null`
 
 ## Outputs
 

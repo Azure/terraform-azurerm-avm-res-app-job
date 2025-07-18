@@ -4,7 +4,9 @@ resource "azurerm_container_app_job" "this" {
   name                         = var.name
   replica_timeout_in_seconds   = var.replica_timeout_in_seconds
   resource_group_name          = var.resource_group_name
+  replica_retry_limit          = var.replica_retry_limit
   tags                         = var.tags
+  workload_profile_name        = var.workload_profile_name
 
   dynamic "template" {
     for_each = [var.template]
@@ -30,6 +32,82 @@ resource "azurerm_container_app_job" "this" {
               value       = env.value.value
             }
           }
+          dynamic "liveness_probe" {
+            for_each = container.value.liveness_probe == null ? [] : container.value.liveness_probe
+
+            content {
+              port                    = liveness_probe.value.port
+              transport               = liveness_probe.value.transport
+              failure_count_threshold = liveness_probe.value.failure_count_threshold
+              host                    = liveness_probe.value.host
+              initial_delay           = liveness_probe.value.initial_delay
+              interval_seconds        = liveness_probe.value.interval_seconds
+              path                    = liveness_probe.value.path
+              timeout                 = liveness_probe.value.timeout
+
+              dynamic "header" {
+                for_each = liveness_probe.value.header == null ? [] : liveness_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
+          dynamic "readiness_probe" {
+            for_each = container.value.readiness_probe == null ? [] : container.value.readiness_probe
+
+            content {
+              port                    = readiness_probe.value.port
+              transport               = readiness_probe.value.transport
+              failure_count_threshold = readiness_probe.value.failure_count_threshold
+              host                    = readiness_probe.value.host
+              interval_seconds        = readiness_probe.value.interval_seconds
+              path                    = readiness_probe.value.path
+              success_count_threshold = readiness_probe.value.success_count_threshold
+              timeout                 = readiness_probe.value.timeout
+
+              dynamic "header" {
+                for_each = readiness_probe.value.header == null ? [] : readiness_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
+          dynamic "startup_probe" {
+            for_each = container.value.startup_probe == null ? [] : container.value.startup_probe
+
+            content {
+              port                    = startup_probe.value.port
+              transport               = startup_probe.value.transport
+              failure_count_threshold = startup_probe.value.failure_count_threshold
+              host                    = startup_probe.value.host
+              interval_seconds        = startup_probe.value.interval_seconds
+              path                    = startup_probe.value.path
+              timeout                 = startup_probe.value.timeout
+
+              dynamic "header" {
+                for_each = startup_probe.value.header == null ? [] : startup_probe.value.header
+
+                content {
+                  name  = header.value.name
+                  value = header.value.value
+                }
+              }
+            }
+          }
+          dynamic "volume_mounts" {
+            for_each = container.value.volume_mounts == null ? [] : container.value.volume_mounts
+
+            content {
+              name = volume_mounts.value.name
+              path = volume_mounts.value.path
+            }
+          }
         }
       }
       dynamic "init_container" {
@@ -50,6 +128,14 @@ resource "azurerm_container_app_job" "this" {
               name        = env.value.name
               secret_name = env.value.secret_name
               value       = env.value.value
+            }
+          }
+          dynamic "volume_mounts" {
+            for_each = init_container.value.volume_mounts == null ? [] : init_container.value.volume_mounts
+
+            content {
+              name = volume_mounts.value.name
+              path = volume_mounts.value.path
             }
           }
         }
@@ -116,6 +202,16 @@ resource "azurerm_container_app_job" "this" {
     content {
       parallelism              = manual_trigger_config.value.parallelism
       replica_completion_count = manual_trigger_config.value.replica_completion_count
+    }
+  }
+  dynamic "registry" {
+    for_each = var.registries
+
+    content {
+      server               = registry.value.server
+      identity             = registry.value.identity
+      password_secret_name = registry.value.password_secret_name
+      username             = registry.value.username
     }
   }
   dynamic "schedule_trigger_config" {

@@ -97,6 +97,10 @@ variable "template" {
         secret_name = optional(string)
         value       = optional(string)
       })))
+      volume_mounts = optional(list(object({
+        name = string
+        path = string
+      })))
     })))
     volume = optional(list(object({
       name         = optional(string)
@@ -136,6 +140,40 @@ variable "managed_identities" {
   - `user_assigned_resource_ids` - (Optional) Specifies a list of User Assigned Managed Identity resource IDs to be assigned to this resource.
   DESCRIPTION
   nullable    = false
+}
+
+variable "registries" {
+  type = list(object({
+    identity             = optional(string)
+    password_secret_name = optional(string)
+    server               = string
+    username             = optional(string)
+  }))
+  default     = []
+  description = <<DESCRIPTION
+A list of container registries used by the Container App Job. Each registry can be defined with:
+- `identity` - (Optional) The identity to use for accessing the registry. This can either be the Resource ID of a User Assigned Identity, or System for the System Assigned Identity.
+- `password_secret_name` - (Optional) The name of the secret that contains the registry password.
+- `server` - (Required) The hostname of the registry server.
+- `username` - (Optional) The username to use for this registry.
+
+NOTE: `identity` cannot be used with `username` and `password_secret_name`. When using `identity`, the identity must have access to the container registry.
+DESCRIPTION
+
+  validation {
+    condition = alltrue([
+      for registry in var.registries : (
+        registry.identity != null ? (registry.username == null && registry.password_secret_name == null) : true
+      )
+    ])
+    error_message = "When identity is provided, username and password_secret_name must not be provided."
+  }
+}
+
+variable "replica_retry_limit" {
+  type        = number
+  default     = null
+  description = "(Optional) The maximum number of retries before considering a Container App Job execution failed."
 }
 
 variable "replica_timeout_in_seconds" {
@@ -232,4 +270,10 @@ variable "trigger_config" {
     ) == 1
     error_message = "Only one of manual_trigger_config, event_trigger_config, or schedule_trigger_config can be specified."
   }
+}
+
+variable "workload_profile_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The name of the workload profile within the Container App Environment to place this Container App Job."
 }
