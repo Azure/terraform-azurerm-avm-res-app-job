@@ -298,10 +298,10 @@ object({
           name             = optional(string)
           custom_rule_type = optional(string)
           metadata         = optional(map(string))
-          authentication = optional(object({
+          authentication = optional(list(object({
             secret_name       = optional(string)
             trigger_parameter = optional(string)
-          }))
+          })))
         })))
       }))
     }))
