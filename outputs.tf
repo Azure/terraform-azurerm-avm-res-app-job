@@ -11,10 +11,7 @@ output "managed_identities" {
       tenant_id    = azurerm_container_app_job.this.identity[0].tenant_id
     } : null
     user_assigned = length(var.managed_identities.user_assigned_resource_ids) > 0 ? {
-      for id in var.managed_identities.user_assigned_resource_ids : id => {
-        client_id    = azurerm_container_app_job.this.identity[0].identity_ids[id]
-        principal_id = azurerm_container_app_job.this.identity[0].identity_ids[id]
-      }
+      identity_ids = tolist(azurerm_container_app_job.this.identity[0].identity_ids)
     } : null
   }
 }

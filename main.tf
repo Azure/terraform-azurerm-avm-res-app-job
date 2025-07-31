@@ -175,7 +175,7 @@ resource "azurerm_container_app_job" "this" {
               name             = rules.value.name
 
               dynamic "authentication" {
-                for_each = rules.value.authentication == null ? [] : [rules.value.authentication]
+                for_each = rules.value.authentication == null ? [] : rules.value.authentication
 
                 content {
                   secret_name       = authentication.value.secret_name
