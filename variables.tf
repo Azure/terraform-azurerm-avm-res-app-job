@@ -242,6 +242,7 @@ variable "trigger_config" {
           name             = optional(string)
           custom_rule_type = optional(string)
           metadata         = optional(map(string))
+          identity_id      = optional(string)
           authentication = optional(list(object({
             secret_name       = optional(string)
             trigger_parameter = optional(string)
