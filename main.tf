@@ -151,6 +151,7 @@ resource "azurerm_container_app_job" "this" {
       }
     }
   }
+
   dynamic "event_trigger_config" {
     for_each = var.trigger_config.event_trigger_config == null ? [] : [var.trigger_config.event_trigger_config]
 
@@ -189,6 +190,7 @@ resource "azurerm_container_app_job" "this" {
       }
     }
   }
+
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned
 
@@ -197,6 +199,7 @@ resource "azurerm_container_app_job" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
+
   dynamic "manual_trigger_config" {
     for_each = var.trigger_config.manual_trigger_config == null ? [] : [var.trigger_config.manual_trigger_config]
 
@@ -205,6 +208,7 @@ resource "azurerm_container_app_job" "this" {
       replica_completion_count = manual_trigger_config.value.replica_completion_count
     }
   }
+
   dynamic "registry" {
     for_each = var.registries
 
@@ -215,6 +219,7 @@ resource "azurerm_container_app_job" "this" {
       username             = registry.value.username
     }
   }
+
   dynamic "schedule_trigger_config" {
     for_each = var.trigger_config.schedule_trigger_config == null ? [] : [var.trigger_config.schedule_trigger_config]
 
@@ -224,6 +229,7 @@ resource "azurerm_container_app_job" "this" {
       replica_completion_count = schedule_trigger_config.value.replica_completion_count
     }
   }
+
   dynamic "secret" {
     for_each = var.secrets
 
