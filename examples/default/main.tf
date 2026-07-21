@@ -47,7 +47,7 @@ resource "azurerm_resource_group" "this" {
 
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  version = "0.4.2"
+  version = "0.5.1"
 
   location            = azurerm_resource_group.this.location
   name                = "la${module.naming.log_analytics_workspace.name_unique}"
