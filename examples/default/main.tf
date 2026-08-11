@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 5.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -189,10 +189,12 @@ module "event_trigger" {
               "queueName" = azurerm_servicebus_queue.this.name
               "namespace" = azurerm_servicebus_namespace.this.name
             }
-            authentication = {
-              secret_name       = "servicebus-connection"
-              trigger_parameter = "connection"
-            }
+            authentication = [
+              {
+                secret_name       = "servicebus-connection"
+                trigger_parameter = "connection"
+              }
+            ]
           }
         ]
       }
