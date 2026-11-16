@@ -38,7 +38,7 @@ provider "azurerm" {
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.13.0"
+  version = "0.13.2"
 
   location         = var.location
   enable_telemetry = var.enable_telemetry
@@ -56,7 +56,7 @@ resource "random_integer" "region_index" {
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/avm-utl-naming/azure"
-  version = "0.2.0"
+  version = "0.3.0"
 }
 
 # This is required for resource modules
@@ -67,7 +67,7 @@ resource "azurerm_resource_group" "this" {
 
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  version = "0.4.2"
+  version = "0.5.1"
 
   location            = azurerm_resource_group.this.location
   name                = "la${module.naming.log_analytics_workspace.name_unique}"
@@ -293,7 +293,7 @@ Version:
 
 Source: Azure/avm-res-operationalinsights-workspace/azurerm
 
-Version: 0.4.2
+Version: 0.5.1
 
 ### <a name="module_manual_trigger"></a> [manual\_trigger](#module\_manual\_trigger)
 
@@ -305,13 +305,13 @@ Version:
 
 Source: Azure/avm-utl-naming/azure
 
-Version: 0.2.0
+Version: 0.3.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
 Source: Azure/avm-utl-regions/azurerm
 
-Version: 0.13.0
+Version: 0.13.2
 
 ### <a name="module_schedule_trigger"></a> [schedule\_trigger](#module\_schedule\_trigger)
 
