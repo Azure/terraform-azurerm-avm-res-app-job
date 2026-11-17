@@ -23,6 +23,20 @@ This module supports two types of secrets:
 
 For production workloads, Azure Key Vault secrets are recommended for enhanced security.
 
+## Telemetry
+
+Telemetry is enabled by default and creates an empty deployment in the active
+subscription, using the module's required `location`. The deployment identity
+needs `Microsoft.Resources/deployments/read`, `write`, and `delete` permissions
+at subscription scope. Set `enable_telemetry = false` to disable telemetry,
+including in the example's dependency modules.
+
+When upgrading from a version that used ModTM, declarative `removed` blocks
+forget the old telemetry and telemetry-only UUID without destroying them.
+Terraform may still need the old providers for one final initialization when
+they are referenced in existing state. Normal plans update the new telemetry
+deployment even when the Container App Job itself has no changes.
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 

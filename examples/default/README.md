@@ -4,9 +4,15 @@
 
 This deploys the module in its simplest form.
 
+The example requires Terraform 1.16 or later because it uses the ModTM-free
+Log Analytics Workspace module 0.6.0. Its `parent_id` input receives the existing
+resource group's ID. For an existing deployment of this example, follow the
+[Workspace 0.6.0 upgrade instructions](https://github.com/Azure/terraform-azurerm-avm-res-operationalinsights-workspace/tree/v0.6.0#upgrading-from-05x-or-earlier)
+before applying; the dependency now manages the workspace through AzAPI.
+
 ```hcl
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.16, < 2.0"
 
   required_providers {
     # tflint-ignore: terraform_unused_required_providers
@@ -17,11 +23,6 @@ terraform {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
-    }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
     }
     random = {
       source  = "hashicorp/random"
@@ -67,12 +68,12 @@ resource "azurerm_resource_group" "this" {
 
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  version = "0.4.2"
+  version = "0.6.0"
 
-  location            = azurerm_resource_group.this.location
-  name                = "la${module.naming.log_analytics_workspace.name_unique}"
-  resource_group_name = azurerm_resource_group.this.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this.location
+  name             = "la${module.naming.log_analytics_workspace.name_unique}"
+  parent_id        = azurerm_resource_group.this.id
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
@@ -228,13 +229,11 @@ module "event_trigger" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.16, < 2.0)
 
 - <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.12)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
-
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.0.0)
 
@@ -293,7 +292,7 @@ Version:
 
 Source: Azure/avm-res-operationalinsights-workspace/azurerm
 
-Version: 0.4.2
+Version: 0.6.0
 
 ### <a name="module_manual_trigger"></a> [manual\_trigger](#module\_manual\_trigger)
 
