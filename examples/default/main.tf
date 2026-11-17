@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.16, < 2.0"
 
   required_providers {
     # tflint-ignore: terraform_unused_required_providers
@@ -10,11 +10,6 @@ terraform {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
-    }
-    # tflint-ignore: terraform_unused_required_providers
-    modtm = {
-      source  = "registry.terraform.io/azure/modtm"
-      version = "~> 0.3"
     }
     random = {
       source  = "hashicorp/random"
@@ -60,12 +55,12 @@ resource "azurerm_resource_group" "this" {
 
 module "log_analytics_workspace" {
   source  = "Azure/avm-res-operationalinsights-workspace/azurerm"
-  version = "0.4.2"
+  version = "0.6.0"
 
-  location            = azurerm_resource_group.this.location
-  name                = "la${module.naming.log_analytics_workspace.name_unique}"
-  resource_group_name = azurerm_resource_group.this.name
-  enable_telemetry    = var.enable_telemetry
+  location         = azurerm_resource_group.this.location
+  name             = "la${module.naming.log_analytics_workspace.name_unique}"
+  parent_id        = azurerm_resource_group.this.id
+  enable_telemetry = var.enable_telemetry
   log_analytics_workspace_identity = {
     type = "SystemAssigned"
   }
